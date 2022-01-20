@@ -1,3 +1,82 @@
+# Puppet fork of pgjdbc
+
+This is a fork of the PostgreSQL JDBC driver that fixes an issue we were having using it with Bouncy Castle. See https://github.com/pgjdbc/pgjdbc/pull/2417 and https://tickets.puppetlabs.com/browse/PE-33226 for more details.
+
+To deploy to our Artifactory's Maven repo:
+- Install Maven
+- Put the following in ~/.m2/settings.xml
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<settings xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.1.0 http://maven.apache.org/xsd/settings-1.1.0.xsd" xmlns="http://maven.apache.org/SETTINGS/1.1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <servers>
+    <server>
+      <username>your_artifactory_username</username>
+      <password>your_artifactory_api_key</password>
+      <id>central</id>
+    </server>
+    <server>
+      <username>your_artifactory_username</username>
+      <password>your_artifactory_api_key</password>
+      <id>snapshots</id>
+    </server>
+  </servers>
+  <profiles>
+    <profile>
+      <repositories>
+        <repository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>maven</name>
+          <url>https://artifactory.delivery.puppetlabs.net/artifactory/maven</url>
+        </repository>
+        <repository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>maven</name>
+          <url>https://artifactory.delivery.puppetlabs.net/artifactory/maven</url>
+        </repository>
+      </repositories>
+      <pluginRepositories>
+        <pluginRepository>
+          <snapshots>
+            <enabled>false</enabled>
+          </snapshots>
+          <id>central</id>
+          <name>maven</name>
+          <url>https://artifactory.delivery.puppetlabs.net/artifactory/maven</url>
+        </pluginRepository>
+        <pluginRepository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>maven</name>
+          <url>https://artifactory.delivery.puppetlabs.net/artifactory/maven</url>
+        </pluginRepository>
+      </pluginRepositories>
+      <id>artifactory</id>
+    </profile>
+  </profiles>
+  <activeProfiles>
+    <activeProfile>artifactory</activeProfile>
+  </activeProfiles>
+</settings>
+```
+- In gradle.properties in the top level of the repo, change `pgjdbc.version` to the version you want to build.
+
+- From the top directory of the repo, run `./gradlew build`
+
+- Then, find the JAR file generated under `pgjdbc/build/local-maven-repo/org/postgresql/postgresql/VERSION`. Run the following:
+```bash
+mvn deploy:deploy-file -Dversion=yourversion-SNAPSHOT -Dpackaging=jar -Dfile=/path/to/file.jar -Durl=https://artifactory.delivery.puppetlabs.net/artifactory/maven-snapshots__local -DgroupId=org.postgresql -DartifactId=postgresql -DrepositoryId=central
+```
+
+- You can now set your version in clj-parent's project.clj. All downstream projects will need to add the following repository in project.clj
+```
+:repositories [["artifactory-maven" "https://artifactory.delivery.puppetlabs.net/artifactory/maven"]]
+```
+
 <img height="90" alt="Slonik Duke" align="right" src="docs/media/img/slonik_duke.png" />
 
 # PostgreSQL JDBC Driver
